@@ -1,48 +1,52 @@
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
+import numpy as np
 import os
+import torchvision.transforms as transforms
+import cv2
 
+transform = transforms.ToTensor()
 class FaceDataSet(Dataset):
     def __init__(self, imgPath,labelPath ,im_size, img_transform=None ,batch_size=128, shuffle=False):
-        self.image_list=[]
-        self.gt_bbox_list=[]
-        self.landmark_bbox_list=[]
         self.data_list = []
+        self.img_transform = img_transform
         with open(labelPath,'r') as f:
             lines = f.readlines()
-
         for line in lines:
-            line = line.strip()
-            if ".jpg" in line:
-                self.image_list.append(os.path.join(imgPath,line))
-                imagePath = os.path.join(imgPath,line)
-            if len(line.split())==1:
-                len_ = int(line.split[0])
+            line = line.strip().split(' ')
+            data_dic = {}
+            # 构造一个字典，每一个字典都有相应的数据读取字段，mtcnn包括图片，以及label，bbox，landmark，都进行初始化，避免不存在的label，
+            # 例如landmar不存在，bbox不存在的情况，这个时候将他置为你np.zeros
+            data_dic['image'] = line[0]
+            data_dic['label'] = int(line[1])
+            data_dic['bbox'] = np.zeros((4,))
+            data_dic['landmark'] = np.zeros((10,))
 
-            if len(line.split())==10:
-                gt_bbox = list(map(int,line.split()[0:4]))
-                # self.gt_bbox_list.append(list(map(int,line.split()[0:4])))
-            i = 0 
-            while i<len_:
-                self.data_list.append(imagePath,)
+            if len(line[2:]) ==4 :
+                data_dic['bbox'] = np.array(line[2:6]).astype(float)
+            elif len(line[2:]) ==14:
+                data_dic['bbox'] = np.array(line[2:6]).astype(float)
+                data_dic['landmark'] = np.array(line[7:17]).astype(float)
 
-        self.img_transform = img_transform
+            self.data_list.append(data_dic)
 
     def __getitem__(self, index):
-        img_path = self.image_list[index]
-        bbox_label = self.gt_bbox_list[index]
-        img = img_path
+        data = self.data_list[index]
+
         if self.img_transform is not None:
-            img = self.img_transform(img)
-        return img, bbox_label
+            img = cv2.imread(data['image'])
+            # print(self.img_transform(img))
+            data['image'] = np.array(self.img_transform(img)).astype(float)
+            # print(data['image'].shape)
+        return data
 
     def __len__(self):
         return len(self.image_list)
 
 if __name__=="__main__":
     dset = FaceDataSet("../../datasets",
-        "../../datasets/wider_face_val_bbx_gt.txt",
-        12)
+        "../datasets/train/12/train_12.txt",
+        12,transform)
+    # for i in range(10):
     print(dset[0])
-    print(dset[1])

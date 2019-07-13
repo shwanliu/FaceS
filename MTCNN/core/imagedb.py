@@ -55,17 +55,17 @@ class ImageDB(object):
             index = annotation[0]
             # 图片路径
             im_path = self.real_image_path(index)
-            imdb = dict()
+            imdb_ = dict()
             imdb_['image'] = im_path
 
             if self.mode == 'test':
                 pass
             else:
                 label = annotation[1]
-                imdb_ ['label'] = int(label) 
+                imdb_['label'] = int(label) 
                 imdb_['flipped'] = False
                 imdb_['bbox'] = np.zeros((4,))
-                imdb_['landmark'] = mp.zeros((10,))
+                imdb_['landmark'] = np.zeros((10,))
                 if len(annotationp[2:])==4:
                     bbox_targe = annotation[2:6]
                     imdb_['bbox'] = np.array(bbox_targe).astype(float)
