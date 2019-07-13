@@ -83,7 +83,7 @@ for annotation in annotations:
         if np.max(iou) < 0.3:
             save_file_name = os.path.join(neg_save_dir,"%s.jpg"%neg_idx)
             neg_anno.write(save_file_name + ' 0\n')
-            # cv2.imwrite(save_file_name, resized_im)
+            cv2.imwrite(save_file_name, resized_im)
             neg_idx+=1
 
     # 根绝gt_bbox的数据进行操作，保证了准确性，不像neg
@@ -113,7 +113,7 @@ for annotation in annotations:
             if np.max(iou) < 0.3:
                 save_file_name = os.path.join(neg_save_dir,"%s.jpg"%neg_idx)
                 neg_anno.write(save_file_name + ' 0\n')
-                # cv2.imwrite(save_file_name, resized_im)
+                cv2.imwrite(save_file_name, resized_im)
                 neg_idx+=1
 
         # 生成困难样本和part样本
@@ -147,13 +147,13 @@ for annotation in annotations:
             if IoU(crop_box, box_)>0.65:
                 save_file_name = os.path.join(pos_save_dir,"%s.jpg"%pos_idx)
                 pos_anno.write(save_file_name + ' 1 %0.2f %0.2f %0.2f %0.2f\n'%(offset_x1, offset_y1, offset_x2, offset_y2))
-                # cv2.imwrite(save_file_name, resized_im)
+                cv2.imwrite(save_file_name, resized_im)
                 pos_idx+=1
 
             elif IoU(crop_box, box_)>=0.4:
                 save_file_name = os.path.join(part_save_dir,"%s.jpg"%part_idx)
                 part_anno.write(save_file_name + ' -1 %0.2f %0.2f %0.2f %0.2f\n'%(offset_x1,offset_y1, offset_x2, offset_y2))
-                # cv2.imwrite(save_file_name, resized_im)
+                cv2.imwrite(save_file_name, resized_im)
                 part_idx+=1
         box_idx+=1
         print("%s images processed done, pos: %s part: %s neg: %s"%(idx,pos_idx,part_idx,neg_idx))
