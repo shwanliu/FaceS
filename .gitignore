@@ -1,0 +1,5 @@
+datasets/*
+MTCNN/datasets/*
+MTCNN/preprocess/anno/*txt
+*.pyc
+*.json
