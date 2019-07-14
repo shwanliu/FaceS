@@ -3,12 +3,15 @@ import datetime
 import os
 import sys
 sys.path.append('..')
+sys.path.append('../..')
 from core.net import PNet,RNet,ONet,LossFn
 from core.image_reader import TrainImageReader
 import torch
 from core.image_tools import convert_image_to_tensor
 from torch.autograd import Variable
 import numpy as np
+from torch.utils.data import DataLoader
+from log.logger import Logger
 
 def computer_accuracy(prob_cls, gt_cls,th=0.6):
     prob_cls = torch.squeeze(prob_cls)
@@ -33,7 +36,7 @@ def computer_accuracy(prob_cls, gt_cls,th=0.6):
 
     return torch.div(torch.mul(torch.sum(right_ones),float(1.0)),float(size))
 
-def train_pnet(modelPath, end_epoch, batch_size,frequent=10, base_lr=0.01,use_cuda=False):
+def train_pnet(modelPath, end_epoch, imdb ,batch_size,frequent=10, base_lr=0.01,use_cuda=False):
 
     if not os.path.exists(modelPath):
         os.makedirs(modelPath)
@@ -73,23 +76,30 @@ def train_pnet(modelPath, end_epoch, batch_size,frequent=10, base_lr=0.01,use_cu
     #     torch.save(net.state_dict(), os.path.join(modelPath,'Pnet_epoch_%d.pt'%cur_epoch))
 
 
-    train_data = TrainImageReader(imdb,12,batch_size,shuffle=True)
+    # train_data = TrainImageReader(imdb,12,batch_size,shuffle=True)
+    # train_data = 
 
+    train_data = DataLoader(imdb,batch_size=batch_size,shuffle=True,num_workers=2)
+    
     for cur_epoch in range(1,end_epoch+1):
-        # shuffle
-        train_data.reset()
+        # # shuffle
 
-        for batch_idx,(image,(gt_label, gt_bbox, gt_landmark)) in enumerate(train_data):
-            
+        for batch_idx, data in enumerate(train_data):
             # 将图片转为tensor
-            im_tensor = [ convert_image_to_tensor(image[i,:,:,:]) for i in range(image.size[0])]
+            im_tensor =  data['image'].float()
+            # print(im_tensor.dtype)
+            # print(im_tensor.shape)
+            gt_label =   data['label'].float()
+            gt_bbox  =   data['bbox'].float()
+            gt_landmark =data['landmark'].float()
+            # im_tensor = [ convert_image_to_tensor(image[i,:,:,:]) for i in range(image.size[0])]
             
-            im_tensor = torch.stack(im_tensor)
+            # im_tensor = torch.stack(im_tensor)
 
-            im_tensor = Variable(im_tensor)
-            gt_label = Variable(torch.from_numpy(gt_label).float())
-            gt_bbox = Variable(torch.from_numpy(gt_bbox).float())
-            gt_landmark = Variable(torch.from_numpy(gt_landmark).float)
+            # im_tensor = Variable(im_tensor)
+            # gt_label = Variable(torch.from_numpy(gt_label).float())
+            # gt_bbox = Variable(torch.from_numpy(gt_bbox).float())
+            # gt_landmark = Variable(torch.from_numpy(gt_landmark).float)
 
             if use_cuda:
                 im_tensor = im_tensor.cuda()
@@ -99,7 +109,7 @@ def train_pnet(modelPath, end_epoch, batch_size,frequent=10, base_lr=0.01,use_cu
             
             cls_pred, box_pred, _ = net(im_tensor)
 
-            cls_loss = lossfn.cls_loss(gt_label,cls_pred)
+            cls_loss = lossfn.cls_loss(gt_label,cls_pred[:,0])
 
             bbox_loss = lossfn.box_loss(gt_label, gt_bbox, box_pred)
 
@@ -108,19 +118,35 @@ def train_pnet(modelPath, end_epoch, batch_size,frequent=10, base_lr=0.01,use_cu
             all_loss = cls_loss*1.0 + bbox_loss*0.5 
 
             if batch_idx % frequent == 0:
-                acc = computer_acc(cls_pred,gt_label)
+                # acc = computer_acc(cls_pred,gt_label)
 
-                acc_show = acc.data.cpu().numpy()
-                cls_loss_show = cls_loss.data.cpu().numpy()
-                bbox_loss_show = bbox_loss.data.cpu.numpy()
-                all_loss_show = all_loss.data.cpu.numpy()
-            
+                num_correct = (cls_pred == gt_label).sum()
+                accuracy = (cls_pred == gt_label).float().mean()
+    
+                cls_loss_show = float(cls_loss.item())
+                bbox_loss_show = float(bbox_loss.item())
+                all_loss_show = float(all_loss.item())
+
+                # (1) Log the scalar values
+                info = {
+                    'loss': all_loss_show,
+                    'accuracy': accuracy
+                }
+
+                # for tag, value in info.items():
+                #     # print(tag,value)
+                #     Logger.scalar_summary()
+
+                print("%s : Epoch: %d, step:%d, accuracy:%0.5f, det_loss:%0.5f, bbox_loss:%0.5f, all_loss:%0.5f, lr:%s"%(
+                    datetime.datetime.now(),cur_epoch,batch_idx,accuracy,cls_loss_show,bbox_loss_show,all_loss_show, base_lr
+                ))
+
             optimizer.zero_grad()
             all_loss.backward()
             optimizer.step()
 
-            torch.save(net.state_dict(), os.path.join(modelPath,'Pnet_epoch_%d.pt'),)
-
+        torch.save(net.state_dict(), os.path.join(modelPath,'Pnet_epoch_%d.pt')%cur_epoch)
+        torch.save(net,os.path.join(modelPath,'Pnet_epoch_%d.pkl')%cur_epoch,)
 
 def train_rnet(modelPath, end_epoch, batch_size, frequent=10, base_lr=0.01, use_cuda=False):
 

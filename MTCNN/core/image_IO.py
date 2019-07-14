@@ -8,7 +8,7 @@ import cv2
 
 transform = transforms.ToTensor()
 class FaceDataSet(Dataset):
-    def __init__(self, imgPath,labelPath ,im_size, img_transform=None ,batch_size=128, shuffle=False):
+    def __init__(self,labelPath ,im_size, img_transform=False,batch_size=128, shuffle=False):
         self.data_list = []
         self.img_transform = img_transform
         with open(labelPath,'r') as f:
@@ -34,19 +34,18 @@ class FaceDataSet(Dataset):
     def __getitem__(self, index):
         data = self.data_list[index]
 
-        if self.img_transform is not None:
+        if self.img_transform:
             img = cv2.imread(data['image'])
             # print(self.img_transform(img))
-            data['image'] = np.array(self.img_transform(img)).astype(float)
+            data['image'] = np.array(transform(img)).astype(float)
             # print(data['image'].shape)
         return data
 
     def __len__(self):
-        return len(self.image_list)
+        return len(self.data_list)
 
-if __name__=="__main__":
-    dset = FaceDataSet("../../datasets",
-        "../datasets/train/12/train_12.txt",
-        12,transform)
-    # for i in range(10):
-    print(dset[0])
+# if __name__=="__main__":
+#     dset = FaceDataSet("../datasets/train/12/train_12.txt",
+#         12,img_transform=True)
+#     # for i in range(10):
+#     print(dset[0])

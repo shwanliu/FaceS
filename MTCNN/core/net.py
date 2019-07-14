@@ -9,7 +9,7 @@ def weight_init(m):
         nn.init.xavier_uniform_(m.weight.data)
         nn.init.constant_(m.bias, 0.1)
 
-# 定义好模型然后定义loss的使用
+# 定义好模型然后定义loss的使用s
 class LossFn:
     # meiy
     def __init__(self, cls_factor=1, box_factor=1, landmark_factor=1):

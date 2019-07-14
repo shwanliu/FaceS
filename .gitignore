@@ -1,5 +1,6 @@
 datasets/*
 MTCNN/datasets/*
-MTCNN/preprocess/anno/*txt
+MTCNN/preprocess/anno/*
+MTCNN/model_path/*
 *.pyc
 *.json
