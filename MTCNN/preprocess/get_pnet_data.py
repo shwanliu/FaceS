@@ -89,8 +89,8 @@ for annotation in annotations:
     # 根绝gt_bbox的数据进行操作，保证了准确性，不像neg
     for bbox in gt_bboxes:
         x1,y1,x2,y2 = bbox
-        w = x2 -x1 + 0.1
-        h = y2 -y1 + 0.1
+        w = x2 -x1 + 1
+        h = y2 -y1 + 1
 
         # 忽略掉小的人脸
         if max(w,h) < 40 or x1 < 0 or y1<0:

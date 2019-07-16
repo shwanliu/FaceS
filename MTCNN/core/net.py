@@ -84,7 +84,7 @@ class PNet(nn.Module):
         )
 
         #人脸分类
-        self.cls = nn.Conv2d(32,2,1,1)
+        self.cls = nn.Conv2d(32,1,1,1)
         #人脸框
         self.bbox = nn.Conv2d(32,4,1,1)
         # 关键点
